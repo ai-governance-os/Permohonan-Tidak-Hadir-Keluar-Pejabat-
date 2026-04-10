@@ -1,6 +1,9 @@
 import pg from 'pg'
 
-const { Pool } = pg
+const { Pool, types } = pg
+
+// Return DATE columns as plain strings (YYYY-MM-DD) instead of JS Date objects
+types.setTypeParser(types.builtins.DATE, (val) => val)
 
 function getConnectionString() {
   return (
