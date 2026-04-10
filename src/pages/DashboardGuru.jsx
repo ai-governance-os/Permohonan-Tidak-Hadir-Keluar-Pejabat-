@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../supabaseClient'
+import { getPermohonan, tambahPermohonan } from '../store'
 import Navbar from '../components/Navbar'
 import BadgeStatus from '../components/BadgeStatus'
 
@@ -32,20 +32,13 @@ export default function DashboardGuru({ sesi, onLogout }) {
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState('')
   const [berjaya, setBerjaya] = useState(false)
-  const [muatSenarai, setMuatSenarai] = useState(false)
   const [tabAktif, setTabAktif] = useState('borang')
 
-  useEffect(() => { fetchSenarai() }, [])
+  useEffect(() => { muatSenarai() }, [])
 
-  async function fetchSenarai() {
-    setMuatSenarai(true)
-    const { data } = await supabase
-      .from('permohonan')
-      .select('*')
-      .eq('guru_nama', sesi.nama)
-      .order('created_at', { ascending: false })
-    setSenarai(data || [])
-    setMuatSenarai(false)
+  async function muatSenarai() {
+    const semua = await getPermohonan()
+    setSenarai(semua.filter(p => p.guru_nama === sesi.nama))
   }
 
   function handleChange(e) {
@@ -63,20 +56,15 @@ export default function DashboardGuru({ sesi, onLogout }) {
     }
 
     setLoading(true)
-    const { error } = await supabase.from('permohonan').insert({
+    await tambahPermohonan({
       guru_nama: sesi.nama,
       ...form,
       status: 'menunggu',
     })
-
-    if (error) {
-      setRalat('Gagal hantar permohonan. Pastikan Supabase telah dikonfigurasi.')
-    } else {
-      setBerjaya(true)
-      setForm(defaultForm)
-      fetchSenarai()
-      setTimeout(() => { setTabAktif('senarai') }, 1500)
-    }
+    setBerjaya(true)
+    setForm(defaultForm)
+    await muatSenarai()
+    setTimeout(() => { setTabAktif('senarai') }, 1500)
     setLoading(false)
   }
 
@@ -209,11 +197,7 @@ export default function DashboardGuru({ sesi, onLogout }) {
         {/* Senarai */}
         {tabAktif === 'senarai' && (
           <div className="space-y-3">
-            {muatSenarai ? (
-              <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-                <p className="text-slate-400 text-sm">Memuatkan...</p>
-              </div>
-            ) : senarai.length === 0 ? (
+            {senarai.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                 <svg className="w-12 h-12 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />

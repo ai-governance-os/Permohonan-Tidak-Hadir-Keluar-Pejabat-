@@ -1,51 +1,44 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../supabaseClient'
+import { getPermohonan, kemaskiniPermohonan } from '../store'
 import Navbar from '../components/Navbar'
 import BadgeStatus from '../components/BadgeStatus'
 
 export default function DashboardAdmin({ sesi, onLogout }) {
   const [senarai, setSenarai] = useState([])
-  const [loading, setLoading] = useState(false)
   const [filterTarikh, setFilterTarikh] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [catatanEdit, setCatatanEdit] = useState({})
   const [bukaTindakan, setBukaTindakan] = useState(null)
 
-  useEffect(() => { fetchSemua() }, [])
+  useEffect(() => { muatSemua() }, [])
 
-  async function fetchSemua() {
-    setLoading(true)
-    let query = supabase
-      .from('permohonan')
-      .select('*')
-      .order('created_at', { ascending: false })
+  async function muatSemua() {
+    setSenarai(await getPermohonan())
+  }
 
-    if (filterTarikh) {
-      query = query.lte('tarikh_mula', filterTarikh).gte('tarikh_tamat', filterTarikh)
-    }
-    if (filterStatus) {
-      query = query.eq('status', filterStatus)
-    }
-
-    const { data } = await query
-    setSenarai(data || [])
-    setLoading(false)
+  function senaraiTertapis() {
+    return senarai.filter(item => {
+      if (filterStatus && item.status !== filterStatus) return false
+      if (filterTarikh) {
+        if (item.tarikh_mula > filterTarikh || item.tarikh_tamat < filterTarikh) return false
+      }
+      return true
+    })
   }
 
   async function kemaskiniStatus(id, status) {
     const catatan = catatanEdit[id] || ''
-    await supabase
-      .from('permohonan')
-      .update({ status, catatan_admin: catatan })
-      .eq('id', id)
+    await kemaskiniPermohonan(id, { status, catatan_admin: catatan })
     setBukaTindakan(null)
-    fetchSemua()
+    await muatSemua()
   }
 
   function formatTarikh(tarikh) {
     if (!tarikh) return '-'
     return new Date(tarikh + 'T00:00:00').toLocaleDateString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric' })
   }
+
+  const papar = senaraiTertapis()
 
   const stats = {
     jumlah: senarai.length,
@@ -104,11 +97,6 @@ export default function DashboardAdmin({ sesi, onLogout }) {
                 <option value="ditolak">Ditolak</option>
               </select>
             </div>
-            <button onClick={fetchSemua}
-              className="text-white text-sm px-5 py-2 rounded-xl transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5"
-              style={{ background: 'linear-gradient(135deg, #7f1d1d, #b45309)' }}>
-              Cari
-            </button>
             {(filterTarikh || filterStatus) && (
               <button onClick={() => { setFilterTarikh(''); setFilterStatus('') }}
                 className="text-slate-500 hover:text-slate-700 text-sm px-4 py-2 rounded-xl border-2 border-slate-200 hover:border-slate-300 transition-colors">
@@ -121,10 +109,10 @@ export default function DashboardAdmin({ sesi, onLogout }) {
         {/* Senarai */}
         <div>
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-            {loading ? 'Memuatkan...' : `${senarai.length} Permohonan`}
+            {papar.length} Permohonan
           </p>
 
-          {!loading && senarai.length === 0 ? (
+          {papar.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
               <svg className="w-12 h-12 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -133,7 +121,7 @@ export default function DashboardAdmin({ sesi, onLogout }) {
             </div>
           ) : (
             <div className="space-y-3">
-              {senarai.map(item => (
+              {papar.map(item => (
                 <div key={item.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
                   {/* Card header */}
                   <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100"
