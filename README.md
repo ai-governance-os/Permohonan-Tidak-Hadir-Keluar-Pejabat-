@@ -1,16 +1,43 @@
-# React + Vite
+# Permohonan Tidak Hadir / Keluar Pejabat
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplikasi React + Vite yang disederhanakan untuk deploy terus dari GitHub ke Vercel tanpa Supabase.
 
-Currently, two official plugins are available:
+## Ringkasan
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Login guru menggunakan nama penuh.
+- Login admin menggunakan kata laluan dari `VITE_ADMIN_PASSWORD`.
+- Semua data permohonan disimpan dalam `localStorage` browser.
+- Sesuai untuk demo, kegunaan pada satu peranti, atau aliran kerja yang tidak memerlukan pangkalan data luaran.
 
-## React Compiler
+## Penting
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Versi ini tidak menggunakan backend. Ini bermaksud:
 
-## Expanding the ESLint configuration
+- Data hanya wujud dalam browser dan peranti yang sama.
+- Jika tukar browser, tukar peranti, atau padam site data, rekod akan hilang.
+- Untuk kegunaan ramai pengguna secara serentak, kita perlu tambah backend kemudian.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Jalankan Secara Tempatan
+
+```bash
+npm install
+npm run dev
+```
+
+## Environment Variable
+
+Salin `.env.example` kepada `.env.local` jika mahu tukar kata laluan admin:
+
+```bash
+VITE_ADMIN_PASSWORD=CHB9008
+```
+
+## Deploy Ke Vercel
+
+1. Push repo ini ke GitHub.
+2. Import repo tersebut ke Vercel.
+3. Set `Framework Preset` kepada `Vite`.
+4. Tambah environment variable `VITE_ADMIN_PASSWORD` jika mahu ubah kata laluan admin.
+5. Deploy.
+
+`vercel.json` telah disediakan supaya route seperti `/guru` dan `/admin` boleh dibuka terus di Vercel.

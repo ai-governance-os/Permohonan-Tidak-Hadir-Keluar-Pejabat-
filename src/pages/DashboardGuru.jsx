@@ -26,6 +26,11 @@ function InputField({ type = 'text', ...props }) {
   )
 }
 
+async function dapatkanPermohonanGuru(namaGuru) {
+  const semua = await getPermohonan()
+  return semua.filter((item) => item.guru_nama === namaGuru)
+}
+
 export default function DashboardGuru({ sesi, onLogout }) {
   const [senarai, setSenarai] = useState([])
   const [form, setForm] = useState(defaultForm)
@@ -34,15 +39,26 @@ export default function DashboardGuru({ sesi, onLogout }) {
   const [berjaya, setBerjaya] = useState(false)
   const [tabAktif, setTabAktif] = useState('borang')
 
-  useEffect(() => { muatSenarai() }, [])
+  useEffect(() => {
+    let aktif = true
 
-  async function muatSenarai() {
-    const semua = await getPermohonan()
-    setSenarai(semua.filter(p => p.guru_nama === sesi.nama))
-  }
+    async function syncData() {
+      const data = await dapatkanPermohonanGuru(sesi.nama)
+      if (aktif) {
+        setSenarai(data)
+      }
+    }
+
+    syncData()
+    window.addEventListener('storage', syncData)
+    return () => {
+      aktif = false
+      window.removeEventListener('storage', syncData)
+    }
+  }, [sesi.nama])
 
   function handleChange(e) {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
   async function handleSubmit(e) {
@@ -56,26 +72,35 @@ export default function DashboardGuru({ sesi, onLogout }) {
     }
 
     setLoading(true)
+
     await tambahPermohonan({
       guru_nama: sesi.nama,
       ...form,
       status: 'menunggu',
     })
+
     setBerjaya(true)
     setForm(defaultForm)
-    await muatSenarai()
-    setTimeout(() => { setTabAktif('senarai') }, 1500)
+    setSenarai(await dapatkanPermohonanGuru(sesi.nama))
+    window.setTimeout(() => {
+      setTabAktif('senarai')
+    }, 1500)
     setLoading(false)
   }
 
   function formatTarikh(tarikh) {
     if (!tarikh) return '-'
-    return new Date(tarikh + 'T00:00:00').toLocaleDateString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric' })
+
+    return new Date(`${tarikh}T00:00:00`).toLocaleDateString('ms-MY', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
   }
 
   const statusCount = {
-    menunggu: senarai.filter(s => s.status === 'menunggu').length,
-    diluluskan: senarai.filter(s => s.status === 'diluluskan').length,
+    menunggu: senarai.filter((item) => item.status === 'menunggu').length,
+    diluluskan: senarai.filter((item) => item.status === 'diluluskan').length,
   }
 
   return (
@@ -83,8 +108,6 @@ export default function DashboardGuru({ sesi, onLogout }) {
       <Navbar sesi={sesi} onLogout={onLogout} />
 
       <div className="max-w-2xl mx-auto px-4 py-6">
-
-        {/* Greeting */}
         <div className="mb-5">
           <h2 className="text-xl font-bold text-slate-800">Selamat datang, {sesi.nama}</h2>
           <p className="text-slate-500 text-sm mt-0.5">
@@ -94,19 +117,21 @@ export default function DashboardGuru({ sesi, onLogout }) {
           </p>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-1 bg-white p-1 rounded-2xl shadow-sm mb-5">
           {[
             { key: 'borang', label: 'Borang Baru', icon: 'M12 4v16m8-8H4' },
             { key: 'senarai', label: `Permohonan Saya (${senarai.length})`, icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
-          ].map(tab => (
-            <button key={tab.key} onClick={() => setTabAktif(tab.key)}
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setTabAktif(tab.key)}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 tabAktif === tab.key
                   ? 'text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-700'
               }`}
-              style={tabAktif === tab.key ? { background: 'linear-gradient(135deg, #7f1d1d, #b45309)' } : {}}>
+              style={tabAktif === tab.key ? { background: 'linear-gradient(135deg, #7f1d1d, #b45309)' } : {}}
+            >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
               </svg>
@@ -115,17 +140,18 @@ export default function DashboardGuru({ sesi, onLogout }) {
           ))}
         </div>
 
-        {/* Borang */}
         {tabAktif === 'borang' && (
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100"
-              style={{ background: 'linear-gradient(135deg, #fef2f2, #fffbeb)' }}>
+            <div
+              className="px-6 py-4 border-b border-slate-100"
+              style={{ background: 'linear-gradient(135deg, #fef2f2, #fffbeb)' }}
+            >
               <h3 className="font-semibold text-slate-800">Borang Permohonan Tidak Hadir</h3>
               <p className="text-xs text-slate-500 mt-0.5">Isi maklumat dengan lengkap dan tepat</p>
             </div>
+
             <div className="p-6">
               <form onSubmit={handleSubmit} className="space-y-5">
-
                 <div>
                   <InputLabel>Tempoh Tidak Hadir</InputLabel>
                   <div className="grid grid-cols-2 gap-3">
@@ -156,15 +182,27 @@ export default function DashboardGuru({ sesi, onLogout }) {
 
                 <div>
                   <InputLabel>Kelas yang Terjejas</InputLabel>
-                  <InputField type="text" name="kelas" required value={form.kelas} onChange={handleChange}
-                    placeholder="cth: 4 Amanah, 5 Bestari" />
+                  <InputField
+                    type="text"
+                    name="kelas"
+                    required
+                    value={form.kelas}
+                    onChange={handleChange}
+                    placeholder="cth: 4 Amanah, 5 Bestari"
+                  />
                 </div>
 
                 <div>
                   <InputLabel>Sebab Ketidakhadiran</InputLabel>
-                  <textarea name="sebab" required value={form.sebab} onChange={handleChange} rows={3}
+                  <textarea
+                    name="sebab"
+                    required
+                    value={form.sebab}
+                    onChange={handleChange}
+                    rows={3}
                     placeholder="Nyatakan sebab dengan jelas..."
-                    className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors bg-slate-50 focus:bg-white resize-none" />
+                    className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors bg-slate-50 focus:bg-white resize-none"
+                  />
                 </div>
 
                 {ralat && (
@@ -175,18 +213,22 @@ export default function DashboardGuru({ sesi, onLogout }) {
                     <p className="text-red-600 text-sm">{ralat}</p>
                   </div>
                 )}
+
                 {berjaya && (
                   <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
                     <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p className="text-green-700 text-sm font-medium">Permohonan berjaya dihantar!</p>
+                    <p className="text-green-700 text-sm font-medium">Permohonan berjaya dihantar.</p>
                   </div>
                 )}
 
-                <button type="submit" disabled={loading}
+                <button
+                  type="submit"
+                  disabled={loading}
                   className="w-full text-white font-semibold py-3 rounded-xl text-sm transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
-                  style={{ background: 'linear-gradient(135deg, #7f1d1d, #b45309)' }}>
+                  style={{ background: 'linear-gradient(135deg, #7f1d1d, #b45309)' }}
+                >
                   {loading ? 'Menghantar...' : 'Hantar Permohonan'}
                 </button>
               </form>
@@ -194,7 +236,6 @@ export default function DashboardGuru({ sesi, onLogout }) {
           </div>
         )}
 
-        {/* Senarai */}
         {tabAktif === 'senarai' && (
           <div className="space-y-3">
             {senarai.length === 0 ? (
@@ -205,34 +246,39 @@ export default function DashboardGuru({ sesi, onLogout }) {
                 <p className="text-slate-400 text-sm">Tiada permohonan lagi.</p>
               </div>
             ) : (
-              senarai.map(item => (
+              senarai.map((item) => (
                 <div key={item.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                  <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100"
-                    style={{ background: 'linear-gradient(135deg, #fef2f2, #fffbeb)' }}>
+                  <div
+                    className="flex items-center justify-between px-5 py-3 border-b border-slate-100"
+                    style={{ background: 'linear-gradient(135deg, #fef2f2, #fffbeb)' }}
+                  >
                     <div className="flex items-center gap-2">
                       <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <p className="text-sm font-semibold text-slate-700">
                         {formatTarikh(item.tarikh_mula)}
-                        {item.tarikh_tamat !== item.tarikh_mula && ` – ${formatTarikh(item.tarikh_tamat)}`}
+                        {item.tarikh_tamat !== item.tarikh_mula && ` - ${formatTarikh(item.tarikh_tamat)}`}
                       </p>
                     </div>
                     <BadgeStatus status={item.status} />
                   </div>
+
                   <div className="px-5 py-3 space-y-1.5">
                     <div className="flex items-center gap-1.5 text-xs text-slate-500">
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      {item.masa_mula} – {item.masa_tamat}
+                      {item.masa_mula} - {item.masa_tamat}
                       <span className="mx-1 text-slate-300">|</span>
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                       {item.kelas}
                     </div>
+
                     <p className="text-xs text-slate-600 bg-slate-50 rounded-lg px-3 py-2">{item.sebab}</p>
+
                     {item.catatan_admin && (
                       <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                         <span className="font-semibold">Catatan Admin:</span> {item.catatan_admin}
