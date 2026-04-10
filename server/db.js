@@ -56,6 +56,8 @@ export async function ensureSchema() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
+      ALTER TABLE permohonan DROP COLUMN IF EXISTS kelas;
+
       CREATE INDEX IF NOT EXISTS idx_permohonan_created_at ON permohonan (created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_permohonan_guru_nama ON permohonan (guru_nama);
       CREATE INDEX IF NOT EXISTS idx_permohonan_status ON permohonan (status);
