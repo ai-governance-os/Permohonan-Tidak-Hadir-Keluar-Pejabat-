@@ -26,15 +26,11 @@ function InputField({ type = 'text', ...props }) {
   )
 }
 
-async function dapatkanPermohonanGuru(namaGuru) {
-  const semua = await getPermohonan()
-  return semua.filter((item) => item.guru_nama === namaGuru)
-}
-
 export default function DashboardGuru({ sesi, onLogout }) {
   const [senarai, setSenarai] = useState([])
   const [form, setForm] = useState(defaultForm)
   const [loading, setLoading] = useState(false)
+  const [sedangMuat, setSedangMuat] = useState(true)
   const [ralat, setRalat] = useState('')
   const [berjaya, setBerjaya] = useState(false)
   const [tabAktif, setTabAktif] = useState('borang')
@@ -42,18 +38,28 @@ export default function DashboardGuru({ sesi, onLogout }) {
   useEffect(() => {
     let aktif = true
 
-    async function syncData() {
-      const data = await dapatkanPermohonanGuru(sesi.nama)
-      if (aktif) {
-        setSenarai(data)
+    async function muatSenarai() {
+      try {
+        const data = await getPermohonan({ guruNama: sesi.nama })
+        if (aktif) {
+          setSenarai(data)
+          setRalat('')
+          setSedangMuat(false)
+        }
+      } catch (error) {
+        if (aktif) {
+          setRalat(error.message || 'Gagal memuatkan senarai permohonan.')
+          setSedangMuat(false)
+        }
       }
     }
 
-    syncData()
-    window.addEventListener('storage', syncData)
+    muatSenarai()
+    const intervalId = window.setInterval(muatSenarai, 15000)
+
     return () => {
       aktif = false
-      window.removeEventListener('storage', syncData)
+      window.clearInterval(intervalId)
     }
   }, [sesi.nama])
 
@@ -73,19 +79,24 @@ export default function DashboardGuru({ sesi, onLogout }) {
 
     setLoading(true)
 
-    await tambahPermohonan({
-      guru_nama: sesi.nama,
-      ...form,
-      status: 'menunggu',
-    })
+    try {
+      await tambahPermohonan({
+        guru_nama: sesi.nama,
+        ...form,
+      })
 
-    setBerjaya(true)
-    setForm(defaultForm)
-    setSenarai(await dapatkanPermohonanGuru(sesi.nama))
-    window.setTimeout(() => {
-      setTabAktif('senarai')
-    }, 1500)
-    setLoading(false)
+      setBerjaya(true)
+      setRalat('')
+      setForm(defaultForm)
+      setSenarai(await getPermohonan({ guruNama: sesi.nama }))
+      window.setTimeout(() => {
+        setTabAktif('senarai')
+      }, 1500)
+    } catch (error) {
+      setRalat(error.message || 'Permohonan gagal dihantar.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   function formatTarikh(tarikh) {
@@ -238,7 +249,11 @@ export default function DashboardGuru({ sesi, onLogout }) {
 
         {tabAktif === 'senarai' && (
           <div className="space-y-3">
-            {senarai.length === 0 ? (
+            {sedangMuat ? (
+              <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                <p className="text-slate-400 text-sm">Memuatkan permohonan...</p>
+              </div>
+            ) : senarai.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                 <svg className="w-12 h-12 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />

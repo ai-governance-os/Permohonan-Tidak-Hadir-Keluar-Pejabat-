@@ -3,34 +3,48 @@ import { getPermohonan, kemaskiniPermohonan } from '../store'
 import Navbar from '../components/Navbar'
 import BadgeStatus from '../components/BadgeStatus'
 
-async function dapatkanSemuaPermohonan() {
-  return getPermohonan()
-}
-
 export default function DashboardAdmin({ sesi, onLogout }) {
   const [senarai, setSenarai] = useState([])
   const [filterTarikh, setFilterTarikh] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [catatanEdit, setCatatanEdit] = useState({})
   const [bukaTindakan, setBukaTindakan] = useState(null)
+  const [ralat, setRalat] = useState('')
+  const [sedangMuat, setSedangMuat] = useState(true)
 
   useEffect(() => {
     let aktif = true
 
-    async function syncData() {
-      const data = await dapatkanSemuaPermohonan()
-      if (aktif) {
-        setSenarai(data)
+    async function muatSemua() {
+      try {
+        const data = await getPermohonan({ token: sesi.token })
+        if (aktif) {
+          setSenarai(data)
+          setRalat('')
+          setSedangMuat(false)
+        }
+      } catch (error) {
+        if (!aktif) return
+
+        if (error.status === 401) {
+          window.localStorage.removeItem('sesi_tidak_hadir')
+          window.location.assign('/')
+          return
+        }
+
+        setRalat(error.message || 'Gagal memuatkan data permohonan.')
+        setSedangMuat(false)
       }
     }
 
-    syncData()
-    window.addEventListener('storage', syncData)
+    muatSemua()
+    const intervalId = window.setInterval(muatSemua, 15000)
+
     return () => {
       aktif = false
-      window.removeEventListener('storage', syncData)
+      window.clearInterval(intervalId)
     }
-  }, [])
+  }, [sesi.token])
 
   function senaraiTertapis() {
     return senarai.filter((item) => {
@@ -48,9 +62,21 @@ export default function DashboardAdmin({ sesi, onLogout }) {
 
   async function kemaskiniStatus(id, status) {
     const catatan = catatanEdit[id] || ''
-    await kemaskiniPermohonan(id, { status, catatan_admin: catatan })
-    setBukaTindakan(null)
-    setSenarai(await dapatkanSemuaPermohonan())
+    setRalat('')
+
+    try {
+      await kemaskiniPermohonan(id, { status, catatan_admin: catatan }, sesi.token)
+      setBukaTindakan(null)
+      setSenarai(await getPermohonan({ token: sesi.token }))
+    } catch (error) {
+      if (error.status === 401) {
+        window.localStorage.removeItem('sesi_tidak_hadir')
+        window.location.assign('/')
+        return
+      }
+
+      setRalat(error.message || 'Tindakan admin gagal disimpan.')
+    }
   }
 
   function formatTarikh(tarikh) {
@@ -81,6 +107,15 @@ export default function DashboardAdmin({ sesi, onLogout }) {
           <h2 className="text-xl font-bold text-slate-800">Panel Admin</h2>
           <p className="text-slate-500 text-sm mt-0.5">Semua permohonan tidak hadir guru</p>
         </div>
+
+        {ralat && (
+          <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            <svg className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p className="text-red-600 text-sm">{ralat}</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-4 gap-3">
           {[
@@ -143,7 +178,11 @@ export default function DashboardAdmin({ sesi, onLogout }) {
         <div>
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">{papar.length} Permohonan</p>
 
-          {papar.length === 0 ? (
+          {sedangMuat ? (
+            <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+              <p className="text-slate-400 text-sm">Memuatkan permohonan...</p>
+            </div>
+          ) : papar.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
               <svg className="w-12 h-12 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />

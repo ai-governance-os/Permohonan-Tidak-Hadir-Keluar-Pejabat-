@@ -1,93 +1,74 @@
-const STORAGE_KEY = 'tidak_hadir_permohonan'
+function binaUrl(path, params = {}) {
+  const search = new URLSearchParams()
 
-function bacaPermohonan() {
-  if (typeof window === 'undefined') return []
-
-  try {
-    const simpanan = window.localStorage.getItem(STORAGE_KEY)
-    const data = simpanan ? JSON.parse(simpanan) : []
-    return Array.isArray(data) ? data : []
-  } catch (err) {
-    console.error('Ralat membaca data tempatan:', err)
-    return []
-  }
-}
-
-function simpanPermohonan(senarai) {
-  if (typeof window === 'undefined') return
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(senarai))
-}
-
-function susunIkutTerkini(senarai) {
-  return [...senarai].sort((a, b) => {
-    const masaA = new Date(a.created_at || 0).getTime()
-    const masaB = new Date(b.created_at || 0).getTime()
-    return masaB - masaA
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      search.set(key, value)
+    }
   })
+
+  const query = search.toString()
+  return query ? `${path}?${query}` : path
 }
 
-function janaId() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID()
+async function request(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+  })
+
+  const payload = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    const error = new Error(payload?.error || 'Permintaan gagal diproses.')
+    error.status = response.status
+    throw error
   }
 
-  return `permohonan-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  return payload
 }
 
-export async function getPermohonan() {
-  try {
-    return susunIkutTerkini(bacaPermohonan())
-  } catch (err) {
-    console.error('Ralat mengambil data tempatan:', err)
-    return []
-  }
+export async function loginAdmin(kataLaluan) {
+  const payload = await request('/api/login', {
+    method: 'POST',
+    body: JSON.stringify({ password: kataLaluan }),
+  })
+
+  return payload.data
+}
+
+export async function getPermohonan({ guruNama, token } = {}) {
+  const payload = await request(
+    binaUrl('/api/permohonan', { guru_nama: guruNama }),
+    {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    },
+  )
+
+  return payload.data || []
 }
 
 export async function tambahPermohonan(item) {
-  try {
-    const capMasa = new Date().toISOString()
-    const rekodBaru = {
-      id: janaId(),
-      created_at: capMasa,
-      updated_at: capMasa,
-      catatan_admin: '',
-      ...item,
-    }
+  const payload = await request('/api/permohonan', {
+    method: 'POST',
+    body: JSON.stringify(item),
+  })
 
-    const terkini = [rekodBaru, ...bacaPermohonan()]
-    simpanPermohonan(susunIkutTerkini(terkini))
-
-    return { success: true, data: rekodBaru }
-  } catch (err) {
-    console.error('Ralat menyimpan data tempatan:', err)
-    return { success: false, error: err }
-  }
+  return { success: true, data: payload.data }
 }
 
-export async function kemaskiniPermohonan(id, kemaskini) {
-  try {
-    const capMasa = new Date().toISOString()
-    let jumpa = false
+export async function kemaskiniPermohonan(id, kemaskini, token) {
+  const payload = await request(
+    binaUrl('/api/permohonan', { id }),
+    {
+      method: 'PATCH',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: JSON.stringify(kemaskini),
+    },
+  )
 
-    const dikemaskini = bacaPermohonan().map((item) => {
-      if (item.id !== id) return item
-
-      jumpa = true
-      return {
-        ...item,
-        ...kemaskini,
-        updated_at: capMasa,
-      }
-    })
-
-    if (!jumpa) {
-      return { success: false, error: new Error('Permohonan tidak ditemui.') }
-    }
-
-    simpanPermohonan(susunIkutTerkini(dikemaskini))
-    return { success: true }
-  } catch (err) {
-    console.error('Ralat mengemaskini data tempatan:', err)
-    return { success: false, error: err }
-  }
+  return { success: true, data: payload.data }
 }

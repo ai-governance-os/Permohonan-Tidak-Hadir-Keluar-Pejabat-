@@ -1,23 +1,26 @@
 import { useState } from 'react'
-
-const KATA_LALUAN_ADMIN = import.meta.env.VITE_ADMIN_PASSWORD || 'CHB9008'
+import { loginAdmin } from '../store'
 
 export default function Login({ onLogin }) {
   const [mod, setMod] = useState(null)
   const [nama, setNama] = useState('')
   const [kataLaluan, setKataLaluan] = useState('')
   const [ralat, setRalat] = useState('')
+  const [sedangLogMasuk, setSedangLogMasuk] = useState(false)
 
-  function handleAdmin(e) {
+  async function handleAdmin(e) {
     e.preventDefault()
     setRalat('')
+    setSedangLogMasuk(true)
 
-    if (kataLaluan === KATA_LALUAN_ADMIN) {
-      onLogin({ peranan: 'admin', nama: 'Admin' })
-      return
+    try {
+      const sesiAdmin = await loginAdmin(kataLaluan)
+      onLogin(sesiAdmin)
+    } catch (error) {
+      setRalat(error.message || 'Log masuk admin gagal.')
+    } finally {
+      setSedangLogMasuk(false)
     }
-
-    setRalat('Kata laluan tidak betul.')
   }
 
   function handleGuru(e) {
@@ -160,10 +163,11 @@ export default function Login({ onLogin }) {
 
                 <button
                   type="submit"
-                  className="w-full text-white font-semibold py-3 rounded-2xl text-sm transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                  disabled={sedangLogMasuk}
+                  className="w-full text-white font-semibold py-3 rounded-2xl text-sm transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{ background: 'linear-gradient(135deg, #7f1d1d, #b45309)' }}
                 >
-                  Log Masuk
+                  {sedangLogMasuk ? 'Sedang semak...' : 'Log Masuk'}
                 </button>
 
                 <button
@@ -171,6 +175,7 @@ export default function Login({ onLogin }) {
                   onClick={() => {
                     setMod(null)
                     setRalat('')
+                    setSedangLogMasuk(false)
                   }}
                   className="w-full text-slate-400 text-xs hover:text-slate-600 transition py-1"
                 >

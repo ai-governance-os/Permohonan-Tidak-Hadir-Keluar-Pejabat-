@@ -1,43 +1,61 @@
 # Permohonan Tidak Hadir / Keluar Pejabat
 
-Aplikasi React + Vite yang disederhanakan untuk deploy terus dari GitHub ke Vercel tanpa Supabase.
+Aplikasi React + Vite untuk guru dan admin, deploy di Vercel, dengan data bersama merentas telefon menggunakan Vercel Functions + Postgres.
 
 ## Ringkasan
 
-- Login guru menggunakan nama penuh.
-- Login admin menggunakan kata laluan dari `VITE_ADMIN_PASSWORD`.
-- Semua data permohonan disimpan dalam `localStorage` browser.
-- Sesuai untuk demo, kegunaan pada satu peranti, atau aliran kerja yang tidak memerlukan pangkalan data luaran.
+- Guru boleh log masuk dengan nama penuh dan menghantar permohonan.
+- Admin log masuk dengan kata laluan yang disemak di server, bukan di frontend.
+- Data disimpan dalam pangkalan data Postgres supaya semua pengguna nampak rekod yang sama.
+- Tiada penggunaan Supabase.
 
-## Penting
+## Seni Bina Ringkas
 
-Versi ini tidak menggunakan backend. Ini bermaksud:
+- Frontend: React + Vite
+- Hosting: Vercel
+- API: Vercel Functions dalam folder `api/`
+- Database: Postgres melalui `DATABASE_URL` atau `POSTGRES_URL`
 
-- Data hanya wujud dalam browser dan peranti yang sama.
-- Jika tukar browser, tukar peranti, atau padam site data, rekod akan hilang.
-- Untuk kegunaan ramai pengguna secara serentak, kita perlu tambah backend kemudian.
+Kod ini sesuai jika anda mahu kekal dalam aliran `GitHub -> Vercel`, tetapi masih perlukan data dikongsi antara ramai pengguna dan banyak telefon.
 
-## Jalankan Secara Tempatan
+## Environment Variables
+
+Tetapkan di Vercel:
+
+```bash
+DATABASE_URL=postgres://user:password@host:5432/dbname
+ADMIN_PASSWORD=CHB9008
+SESSION_SECRET=tukar-kepada-rentetan-rahsia-yang-panjang
+```
+
+Nota:
+
+- `DATABASE_URL` atau `POSTGRES_URL` diperlukan untuk simpan rekod.
+- `ADMIN_PASSWORD` digunakan untuk log masuk admin.
+- `SESSION_SECRET` digunakan untuk tandatangan token sesi admin.
+
+## Jalankan Tempatan
+
+Untuk frontend sahaja:
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Environment Variable
-
-Salin `.env.example` kepada `.env.local` jika mahu tukar kata laluan admin:
+Untuk frontend + Vercel Functions sekali:
 
 ```bash
-VITE_ADMIN_PASSWORD=CHB9008
+npm install
+npm run dev:vercel
 ```
 
 ## Deploy Ke Vercel
 
 1. Push repo ini ke GitHub.
-2. Import repo tersebut ke Vercel.
-3. Set `Framework Preset` kepada `Vite`.
-4. Tambah environment variable `VITE_ADMIN_PASSWORD` jika mahu ubah kata laluan admin.
+2. Import repo ke Vercel.
+3. Sambungkan pangkalan data Postgres dalam ekosistem Vercel atau tambah `DATABASE_URL` sendiri.
+4. Tambah `ADMIN_PASSWORD` dan `SESSION_SECRET`.
 5. Deploy.
 
-`vercel.json` telah disediakan supaya route seperti `/guru` dan `/admin` boleh dibuka terus di Vercel.
+`vercel.json` telah dikemas kini supaya route frontend seperti `/guru` dan `/admin` berfungsi, sambil mengekalkan `/api/*` untuk Vercel Functions.
