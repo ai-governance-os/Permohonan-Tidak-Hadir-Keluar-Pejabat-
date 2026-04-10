@@ -131,7 +131,7 @@ export default function Login({ onLogin }) {
 
           {/* Footer */}
           <div className="px-8 pb-6 text-center">
-            <p className="text-slate-300 text-xs">© 2025 SJK(C) Chung Hwa Belemang</p>
+            <p className="text-slate-300 text-xs">© 2026 SJK(C) Chung Hwa Belemang</p>
           </div>
         </div>
       </div>
