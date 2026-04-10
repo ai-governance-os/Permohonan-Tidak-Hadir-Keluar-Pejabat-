@@ -3,16 +3,14 @@ import { supabase } from '../supabaseClient'
 import Navbar from '../components/Navbar'
 import BadgeStatus from '../components/BadgeStatus'
 
-export default function DashboardAdmin({ profil }) {
+export default function DashboardAdmin({ sesi, onLogout }) {
   const [senarai, setSenarai] = useState([])
   const [loading, setLoading] = useState(false)
   const [filterTarikh, setFilterTarikh] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [catatanEdit, setCatatanEdit] = useState({})
 
-  useEffect(() => {
-    fetchSemua()
-  }, [])
+  useEffect(() => { fetchSemua() }, [])
 
   async function fetchSemua() {
     setLoading(true)
@@ -56,11 +54,10 @@ export default function DashboardAdmin({ profil }) {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <Navbar profil={profil} />
+      <Navbar sesi={sesi} onLogout={onLogout} />
 
       <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
 
-        {/* Statistik */}
         <div className="grid grid-cols-4 gap-4">
           {[
             { label: 'Jumlah', nilai: stats.jumlah, warna: 'text-slate-700' },
@@ -75,47 +72,34 @@ export default function DashboardAdmin({ profil }) {
           ))}
         </div>
 
-        {/* Filter */}
         <div className="bg-white rounded-2xl shadow-sm p-4 flex flex-wrap gap-3 items-end">
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Tapis Tarikh</label>
-            <input
-              type="date"
-              value={filterTarikh}
-              onChange={e => setFilterTarikh(e.target.value)}
-              className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <input type="date" value={filterTarikh} onChange={e => setFilterTarikh(e.target.value)}
+              className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Tapis Status</label>
-            <select
-              value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+              className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Semua</option>
               <option value="menunggu">Menunggu</option>
               <option value="diluluskan">Diluluskan</option>
               <option value="ditolak">Ditolak</option>
             </select>
           </div>
-          <button
-            onClick={fetchSemua}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1.5 rounded-lg transition"
-          >
+          <button onClick={fetchSemua}
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1.5 rounded-lg transition">
             Cari
           </button>
           {(filterTarikh || filterStatus) && (
-            <button
-              onClick={() => { setFilterTarikh(''); setFilterStatus(''); }}
-              className="text-slate-500 hover:text-slate-700 text-sm px-3 py-1.5 rounded-lg border border-slate-300 transition"
-            >
+            <button onClick={() => { setFilterTarikh(''); setFilterStatus('') }}
+              className="text-slate-500 hover:text-slate-700 text-sm px-3 py-1.5 rounded-lg border border-slate-300 transition">
               Reset
             </button>
           )}
         </div>
 
-        {/* Senarai */}
         <div className="bg-white rounded-2xl shadow-sm p-6">
           <h2 className="font-semibold text-slate-800 text-lg mb-4">Semua Permohonan</h2>
 
@@ -136,34 +120,26 @@ export default function DashboardAdmin({ profil }) {
                       <p className="text-sm text-slate-600 mt-0.5">
                         {formatTarikh(item.tarikh_mula)}
                         {item.tarikh_tamat !== item.tarikh_mula && ` – ${formatTarikh(item.tarikh_tamat)}`}
-                        {' '}&middot; {item.masa_mula} – {item.masa_tamat}
+                        {' '}· {item.masa_mula} – {item.masa_tamat}
                       </p>
                       <p className="text-xs text-slate-500 mt-0.5">Kelas: {item.kelas}</p>
                       <p className="text-xs text-slate-600 mt-1 bg-slate-50 rounded px-2 py-1">{item.sebab}</p>
                     </div>
                   </div>
 
-                  {/* Tindakan Admin */}
                   {item.status === 'menunggu' && (
                     <div className="mt-3 pt-3 border-t border-slate-100 space-y-2">
-                      <textarea
-                        rows={2}
-                        placeholder="Catatan admin (pilihan)..."
+                      <textarea rows={2} placeholder="Catatan admin (pilihan)..."
                         value={catatanEdit[item.id] || ''}
                         onChange={e => setCatatanEdit(prev => ({ ...prev, [item.id]: e.target.value }))}
-                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                      />
+                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => kemaskiniStatus(item.id, 'diluluskan')}
-                          className="bg-green-600 hover:bg-green-700 text-white text-xs px-4 py-1.5 rounded-lg transition"
-                        >
+                        <button onClick={() => kemaskiniStatus(item.id, 'diluluskan')}
+                          className="bg-green-600 hover:bg-green-700 text-white text-xs px-4 py-1.5 rounded-lg transition">
                           Luluskan
                         </button>
-                        <button
-                          onClick={() => kemaskiniStatus(item.id, 'ditolak')}
-                          className="bg-red-500 hover:bg-red-600 text-white text-xs px-4 py-1.5 rounded-lg transition"
-                        >
+                        <button onClick={() => kemaskiniStatus(item.id, 'ditolak')}
+                          className="bg-red-500 hover:bg-red-600 text-white text-xs px-4 py-1.5 rounded-lg transition">
                           Tolak
                         </button>
                       </div>
@@ -180,7 +156,6 @@ export default function DashboardAdmin({ profil }) {
             </div>
           )}
         </div>
-
       </div>
     </div>
   )
