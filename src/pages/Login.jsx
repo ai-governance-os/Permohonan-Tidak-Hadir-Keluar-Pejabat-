@@ -64,7 +64,7 @@ export default function Login({ onLogin }) {
             <h1 className="text-white font-bold text-lg leading-tight">SJK(C) CHUNG HWA BELEMANG</h1>
             <p className="text-red-200 text-xs mt-1">Sistem dalaman permohonan tidak hadir dan keluar pejabat</p>
             <div className="mt-3 w-12 h-0.5 bg-yellow-400 mx-auto rounded-full" />
-            <p className="text-yellow-200 text-xs mt-2 font-medium tracking-wide">SISTEM PERMOHONAN TIDAK HADIR</p>
+            <p className="text-yellow-200 text-xs mt-2 font-medium tracking-wide">SISTEM MAKLUMAN RELIEF</p>
           </div>
 
           <div className="px-8 py-6">

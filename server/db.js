@@ -49,7 +49,6 @@ export async function ensureSchema() {
         tarikh_tamat DATE NOT NULL,
         masa_mula TEXT NOT NULL,
         masa_tamat TEXT NOT NULL,
-        kelas TEXT NOT NULL,
         sebab TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'menunggu',
         catatan_admin TEXT NOT NULL DEFAULT '',

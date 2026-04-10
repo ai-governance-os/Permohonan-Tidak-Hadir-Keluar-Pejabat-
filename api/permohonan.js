@@ -27,7 +27,6 @@ function validatePermohonan(body) {
     'tarikh_tamat',
     'masa_mula',
     'masa_tamat',
-    'kelas',
     'sebab',
   ]
 
@@ -91,12 +90,11 @@ export default async function handler(req, res) {
             tarikh_tamat,
             masa_mula,
             masa_tamat,
-            kelas,
             sebab,
             status,
             catatan_admin
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'menunggu', '')
+          VALUES ($1, $2, $3, $4, $5, $6, $7, 'menunggu', '')
           RETURNING *
         `,
         [
@@ -106,7 +104,6 @@ export default async function handler(req, res) {
           body.tarikh_tamat,
           body.masa_mula,
           body.masa_tamat,
-          String(body.kelas).trim(),
           String(body.sebab).trim(),
         ],
       )

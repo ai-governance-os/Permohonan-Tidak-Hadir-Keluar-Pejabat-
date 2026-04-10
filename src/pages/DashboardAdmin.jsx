@@ -216,7 +216,7 @@ export default function DashboardAdmin({ sesi, onLogout }) {
                   </div>
 
                   <div className="px-5 py-3">
-                    <div className="grid grid-cols-3 gap-3 mb-2">
+                    <div className="grid grid-cols-2 gap-3 mb-2">
                       <div className="bg-slate-50 rounded-xl p-2.5">
                         <p className="text-xs text-slate-400 mb-0.5">Tarikh</p>
                         <p className="text-xs font-semibold text-slate-700">
@@ -232,11 +232,6 @@ export default function DashboardAdmin({ sesi, onLogout }) {
                           <br />
                           {item.masa_tamat}
                         </p>
-                      </div>
-
-                      <div className="bg-slate-50 rounded-xl p-2.5">
-                        <p className="text-xs text-slate-400 mb-0.5">Kelas</p>
-                        <p className="text-xs font-semibold text-slate-700">{item.kelas}</p>
                       </div>
                     </div>
 
