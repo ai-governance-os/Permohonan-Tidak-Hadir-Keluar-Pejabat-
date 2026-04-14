@@ -94,8 +94,7 @@ export default function DashboardAdmin({ sesi, onLogout }) {
   const stats = {
     jumlah: senarai.length,
     menunggu: senarai.filter((item) => item.status === 'menunggu').length,
-    diluluskan: senarai.filter((item) => item.status === 'diluluskan').length,
-    ditolak: senarai.filter((item) => item.status === 'ditolak').length,
+    maklum: senarai.filter((item) => item.status === 'maklum').length,
   }
 
   return (
@@ -121,8 +120,7 @@ export default function DashboardAdmin({ sesi, onLogout }) {
           {[
             { label: 'Jumlah', nilai: stats.jumlah, icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', bg: 'from-slate-700 to-slate-800' },
             { label: 'Menunggu', nilai: stats.menunggu, icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', bg: 'from-amber-500 to-orange-500' },
-            { label: 'Diluluskan', nilai: stats.diluluskan, icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', bg: 'from-emerald-500 to-green-600' },
-            { label: 'Ditolak', nilai: stats.ditolak, icon: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z', bg: 'from-red-500 to-red-700' },
+            { label: 'Maklum', nilai: stats.maklum, icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', bg: 'from-emerald-500 to-green-600' },
           ].map((stat) => (
             <div key={stat.label} className={`bg-gradient-to-br ${stat.bg} rounded-2xl p-4 text-white shadow-md`}>
               <svg className="w-5 h-5 opacity-80 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -156,8 +154,7 @@ export default function DashboardAdmin({ sesi, onLogout }) {
               >
                 <option value="">Semua Status</option>
                 <option value="menunggu">Menunggu</option>
-                <option value="diluluskan">Diluluskan</option>
-                <option value="ditolak">Ditolak</option>
+                <option value="maklum">Maklum</option>
               </select>
             </div>
 
@@ -237,14 +234,14 @@ export default function DashboardAdmin({ sesi, onLogout }) {
 
                     <p className="text-xs text-slate-600 bg-slate-50 rounded-xl px-3 py-2">{item.sebab}</p>
 
-                    {item.catatan_admin && item.status !== 'menunggu' && (
+                    {item.catatan_admin && item.status === 'maklum' && (
                       <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mt-2">
                         <span className="font-semibold">Catatan:</span> {item.catatan_admin}
                       </p>
                     )}
                   </div>
 
-                  {item.status === 'menunggu' && (
+                  {item.status !== 'maklum' && (
                     <div className="px-5 pb-4">
                       {bukaTindakan === item.id ? (
                         <div className="space-y-2 border-t border-slate-100 pt-3">
@@ -258,17 +255,10 @@ export default function DashboardAdmin({ sesi, onLogout }) {
 
                           <div className="flex gap-2">
                             <button
-                              onClick={() => kemaskiniStatus(item.id, 'diluluskan')}
+                              onClick={() => kemaskiniStatus(item.id, 'maklum')}
                               className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-xs px-4 py-2 rounded-xl transition-all font-medium shadow-sm"
                             >
-                              Luluskan
-                            </button>
-
-                            <button
-                              onClick={() => kemaskiniStatus(item.id, 'ditolak')}
-                              className="flex-1 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white text-xs px-4 py-2 rounded-xl transition-all font-medium shadow-sm"
-                            >
-                              Tolak
+                              Maklum
                             </button>
 
                             <button

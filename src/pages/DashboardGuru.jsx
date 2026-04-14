@@ -110,7 +110,6 @@ export default function DashboardGuru({ sesi, onLogout }) {
 
   const statusCount = {
     menunggu: senarai.filter((item) => item.status === 'menunggu').length,
-    diluluskan: senarai.filter((item) => item.status === 'diluluskan').length,
   }
 
   return (

@@ -126,7 +126,7 @@ export default async function handler(req, res) {
         return sendError(res, 400, 'ID permohonan diperlukan.')
       }
 
-      if (!['menunggu', 'diluluskan', 'ditolak'].includes(status)) {
+      if (!['menunggu', 'maklum'].includes(status)) {
         return sendError(res, 400, 'Status tidak sah.')
       }
 
